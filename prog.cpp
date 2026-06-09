@@ -28,6 +28,23 @@ static void run_brute_force(int64_t alpha, int64_t beta, int64_t p) {
   }
 }
 
+static void run_pohlig_hellman(int64_t alpha, int64_t beta, int64_t p) {
+  std::cout << "[Pohlig-Hellman] alpha=" << alpha << ", beta=" << beta << ", p=" << p << "\n";
+
+  auto t0 = std::chrono::steady_clock::now();
+  int64_t x = pohlig_hellman(alpha, beta, p);
+  auto t1 = std::chrono::steady_clock::now();
+  double ms = std::chrono::duration<double, std::milli>(t1 - t0).count();
+
+  if (x >= 0) {
+    std::cout << "x = " << x << "  (" << ms << " ms)\n";
+    int64_t check = mod_pow(alpha, x, p);
+    std::cout << "Verification: " << alpha << "^" << x << " mod " << p << " = " << check << (check == beta ? "  OK" : "  FAIL") << "\n";
+  } else {
+    std::cout << "No solution\n";
+  }
+}
+
 static void run_demo() {
   // тестові значення: p - просте, alpha - примітивний корінь, 100 <= x <= 999
   struct Case {
@@ -43,7 +60,7 @@ static void run_demo() {
     std::cout << "-------------------------------\n";
     std::cout << "Expected x = " << c.x << "\n";
     run_brute_force(c.alpha, c.beta, c.p);
-    // run_pohlig_hellman(c.alpha, c.beta, c.p);
+    run_pohlig_hellman(c.alpha, c.beta, c.p);
   }
 }
 
@@ -73,7 +90,9 @@ int main(int argc, char* argv[]) {
     case 1:
       run_brute_force(alpha, beta, p);
       break;
-    // case 2: run_pohlig_hellman(alpha, beta, p); break;
+    case 2:
+      run_pohlig_hellman(alpha, beta, p);
+      break;
     default:
       std::cerr << "Unknown method: " << method << "\n";
       print_usage(argv[0]);
