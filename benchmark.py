@@ -15,14 +15,16 @@ PROBLEM_RE = re.compile(r"(\d+)\^x\s*.{0,3}\s*(\d+)\s*\(mod\s*(\d+)\)")
 
 
 bf_timed_out = False  # як тільки брут форс не вклався - більше не запускаємо
-
+ph_timed_out = False
 
 def solve(alpha: int, beta: int, p: int, method: int) -> tuple[int, float]:
     """Викликає ./prog <method> alpha beta p, повертає (x, ms)"""
-    global bf_timed_out
+    global bf_timed_out, ph_timed_out
 
-    # метод 1 - брут форс, пропускаємо якщо вже знаємо що не встигне
+    # пропускаємо брутфорс або СПГ, якщо вже знаємо що вони не встигнуть за 5 хвилин
     if method == 1 and bf_timed_out:
+        return -1, float("inf")
+    if method == 2 and ph_timed_out:
         return -1, float("inf")
 
     t0 = time.perf_counter()
@@ -35,7 +37,11 @@ def solve(alpha: int, beta: int, p: int, method: int) -> tuple[int, float]:
         ms = (time.perf_counter() - t0) * 1000
         if method == 1:
             bf_timed_out = True
-            print(f"\n  [BF TIMEOUT] brute force won't run for any further cases", file=sys.stderr)
+            print(f"\n  [BF TIMEOUT] brute force won't run for any further cases of this task type", file=sys.stderr)
+        if method == 2:
+            ph_timed_out = True
+            print(f"\n  [PH TIMEOUT] pohlig-hellman won't run for any further cases of this task type", file=sys.stderr)
+
         return -1, ms
     ms = (time.perf_counter() - t0) * 1000
 
@@ -118,13 +124,22 @@ def generate_and_solve(problem_type: int, digits: int) -> dict | None:
 def run_benchmark():
     # results[problem_type][digits] = list of dicts
     results = {1: {}, 2: {}}
+    global bf_timed_out, ph_timed_out
 
     for ptype in (1, 2):
         print(f"\n{'='*60}")
         print(f"Problem type {ptype}")
         print(f"{'='*60}")
 
-        for digits in DIGITS_RANGE:
+        bf_timed_out = False
+        ph_timed_out = False
+        
+        digits = 3
+
+        while not (bf_timed_out and ph_timed_out):
+            if digits >= 20:
+                print(f"[ALARM] EMERGENCY STOP WE ALREADY REACHED {digits} digits")
+                break
             print(f"  digits={digits}  ", end="", flush=True)
             runs = []
 
@@ -140,12 +155,15 @@ def run_benchmark():
 
             if not runs:
                 results[ptype][digits] = None
+                digits += 1
                 continue
 
             valid_bf = [r["ms_bf"] for r in runs if r["ms_bf"] != float("inf")]
             avg_bf = sum(valid_bf) / len(valid_bf) if valid_bf else float("inf")
-            avg_ph = sum(r["ms_ph"] for r in runs) / len(runs)
+            valid_ph = [r["ms_ph"] for r in runs if r["ms_ph"] != float("inf")]
+            avg_ph = sum(valid_ph) / len(valid_ph) if valid_ph else float("inf")
             results[ptype][digits] = {"avg_bf": avg_bf, "avg_ph": avg_ph, "n": len(runs)}
+            digits += 1
 
     # підсумкова таблиця
     print(f"\n{'='*60}")
@@ -157,7 +175,7 @@ def run_benchmark():
     print("-" * len(header))
 
     for ptype in (1, 2):
-        for digits in DIGITS_RANGE:
+        for digits in sorted(results[ptype].keys()):
             r = results[ptype][digits]
             if r is None:
                 print(f"{ptype:>6}  {digits:>6}  {'N/A':>16}  {'N/A':>18}  {'0':>5}")
