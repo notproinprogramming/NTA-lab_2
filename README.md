@@ -22,24 +22,24 @@ $ docker pull notproinprogramming/nta-dlog
 Програма шукає `x` таке, що `alpha^x = beta (mod p)`.
 
 ```
-$ docker run --rm nta-dlog <номер_методу> <alpha> <beta> <p>
+$ docker run --rm notproinprogramming/nta-dlog <номер_методу> <alpha> <beta> <p>
 ```
 
 ### Приклади команд
 
 Перебір:
 ```
-$ docker run --rm nta-dlog 1 5 498 503
+$ docker run --rm notproinprogramming/nta-dlog 1 5 498 503
 ```
 
 Похліг-Гелман:
 ```
-$ docker run --rm nta-dlog 2 2 379 509
+$ docker run --rm notproinprogramming/nta-dlog 2 2 379 509
 ```
 
 Демонстрація на тестових значеннях:
 ```
-$ docker run --rm nta-dlog 3
+$ docker run --rm notproinprogramming/nta-dlog 3
 ```
 
 ## 3. Інформування користувача
